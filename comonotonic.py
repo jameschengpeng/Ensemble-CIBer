@@ -417,7 +417,7 @@ class clustered_comonotonic:
             y_predict.append(predicted_class)
         end = timeit.default_timer()
         print('Testing time: ' + str(end-start-sum(discretization_time)))
-        return y_predict
+        return np.array(y_predict)
     
     def print_cluster(self):
         return self.cluster_book
