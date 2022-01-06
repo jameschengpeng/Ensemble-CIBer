@@ -337,9 +337,10 @@ class clustered_comonotonic:
             if self.discrete_method != 'mdlp':
                 for i,f in enumerate(x):
                     if i in self.cont_col:
-                        cate_x.append(np.digitize(f,self.bin_info[i]))
+                        discretized_val = np.digitize(f,self.bin_info[i])
+                        cate_x.append(self.encode_ref[i][discretized_val])
                     else:
-                        cate_x.append(f)
+                        cate_x.append(self.encode_ref[i][f])
             else:
                 x_copy = x.copy()
                 x_copy = np.array(x_copy).reshape(1,-1)
@@ -349,21 +350,26 @@ class clustered_comonotonic:
                 for i,f in enumerate(x):
                     if self.mixed_discrete == False:
                         if i in self.cont_col:
-                            cate_x.append(x_copy_cont[0][index_cont])
+                            discretized_val = x_copy_cont[0][index_cont]
+                            cate_x.append(self.encode_ref[i][discretized_val])
                             index_cont += 1
                         else:
-                            cate_x.append(f)
+                            cate_x.append(self.encode_ref[i][f])
                     else:
                         if (i in self.cont_col) and (i not in self.bin_info.keys()):
-                            cate_x.append(x_copy_cont[0][index_cont])
+                            discretized_val = x_copy_cont[0][index_cont]
+                            cate_x.append(self.encode_ref[i][discretized_val])
                             index_cont += 1
                         elif (i in self.cont_col) and (i in self.bin_info.keys()):
-                            cate_x.append(np.digitize(f,self.bin_info[i]))
+                            discretized_val = np.digitize(f,self.bin_info[i])
+                            cate_x.append(self.encode_ref[i][discretized_val])
                             index_cont += 1
                         else:
-                            cate_x.append(f)
+                            cate_x.append(self.encode_ref[i][f])
         else:
-            cate_x = x.copy()
+            cate_x = list()
+            for i, f in enumerate(x):
+                cate_x.append(self.encode_ref[i][f])
         end = timeit.default_timer()
         # get the probability distribution of one instance
         prob_distribution = self.prior_prob.copy() # initialize with prior probability
