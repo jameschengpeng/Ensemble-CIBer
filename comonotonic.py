@@ -73,7 +73,7 @@ def get_JS_matrix(var_4_cluster):
 class clustered_comonotonic:
     # discrete is treated as cont
     def __init__(self, x_train, y_train, discrete_feature_val, cont_col, categorical, 
-                 min_corr, linkage = 'min', corrtype='pearson', discrete_method = 'auto', 
+                 min_corr, linkage = 'single', corrtype='pearson', discrete_method = 'auto', 
                  allocation_book = None):
         self.x_train = x_train
         self.y_train = y_train
