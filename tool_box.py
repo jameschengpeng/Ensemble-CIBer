@@ -217,7 +217,7 @@ def joint_encode(df, cluster):
     col_exist = [df.columns[i] for i in cluster]
     # the dataframe with feature that are not fully encoded
     df_unencode = df[col_exist].copy()
-    # store the encoding information
+    # store the encoding information. {col:{val:encoded_number}}
     encode_ref = {col:{val:None for val in df_unencode[col].unique()} for col in col_exist}
     # track those fully encoded columns
     fully_encoded = {col:False for col in col_exist}

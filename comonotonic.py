@@ -4,6 +4,7 @@ import copy
 import operator
 import tool_box as tb
 from tool_box import empty_intersection_correction
+from tool_box import joint_encode
 from sklearn.model_selection import train_test_split
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.utils import resample
@@ -72,18 +73,21 @@ def get_JS_matrix(var_4_cluster):
 class clustered_comonotonic:
     # discrete is treated as cont
     def __init__(self, x_train, y_train, discrete_feature_val, cont_col, categorical, 
-                 min_corr, corrtype='pearson', discrete_method = 'auto', allocation_book = None):
+                 min_corr, linkage = 'min', corrtype='pearson', discrete_method = 'auto', 
+                 allocation_book = None):
         self.x_train = x_train
         self.y_train = y_train
         self.discrete_feature_val = discrete_feature_val
         self.cont_col = cont_col
         self.min_corr = min_corr
+        self.linkage = linkage
         self.discrete_method = discrete_method
         self.allocation_book = allocation_book
         self.corrtype = corrtype
         if len(cont_col) == 0:
             self.cont_feature_val = dict()
 
+    # store the transformer for testing use
     def discretize(self):
         if self.discrete_method != 'mdlp':
             cont_feature_val = dict()
@@ -156,6 +160,15 @@ class clustered_comonotonic:
         else:
             self.feature_val = self.cont_feature_val.copy()
 
+    # joint encode the discretized columns and categorical columns 
+    # i.e., after discretization, all columns are discrete. So joint encode them all.
+    def encoding(self):
+        df_train = pd.DataFrame(self.x_train.copy())
+        # encode_ref is of format: {col:{val:encoded_number}}
+        df_train, encode_ref = joint_encode(df_train, [i for i in range(df_train.shape[1])])
+        self.x_train = df_train.to_numpy()
+        self.encode_ref = encode_ref
+
     def clustering(self):
         if self.min_corr == 0:
             self.cluster_book = [[i for i in self.cont_col]]
@@ -185,7 +198,7 @@ class clustered_comonotonic:
             abs_corr = np.absolute(corr_matrix)
             distance_matrix = 1 - abs_corr
 
-            clusterer = AgglomerativeClustering(affinity='precomputed', linkage='average', 
+            clusterer = AgglomerativeClustering(affinity='precomputed', linkage=self.linkage, 
                                                 distance_threshold=1-self.min_corr, n_clusters=None)
             clusterer.fit(distance_matrix)
             adjusted_cluster_dict = dict()
