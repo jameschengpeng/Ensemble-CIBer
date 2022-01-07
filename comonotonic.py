@@ -164,6 +164,7 @@ class clustered_comonotonic:
     # i.e., after discretization, all columns are discrete. So joint encode them all.
     def encoding(self):
         df_train = pd.DataFrame(self.x_train.copy())
+        df_train.columns = [str(i) for i in range(df_train.shape[1])]
         # encode_ref is of format: {col:{val:encoded_number}}
         df_train, encode_ref = joint_encode(df_train, [i for i in range(df_train.shape[1])])
         self.x_train = df_train.to_numpy()
@@ -308,9 +309,10 @@ class clustered_comonotonic:
         start = timeit.default_timer()
         if len(self.cont_col) != 0:
             # try discretize first
-            self.clustering()
-            time1 = timeit.default_timer()
             self.discretize()
+            time1 = timeit.default_timer()
+            self.encoding()
+            self.clustering()
             time2 = timeit.default_timer()
         if len(self.cont_col) == 0:
             self.construct_feature_val()
@@ -338,9 +340,9 @@ class clustered_comonotonic:
                 for i,f in enumerate(x):
                     if i in self.cont_col:
                         discretized_val = np.digitize(f,self.bin_info[i])
-                        cate_x.append(self.encode_ref[i][discretized_val])
+                        cate_x.append(self.encode_ref[str(i)][discretized_val])
                     else:
-                        cate_x.append(self.encode_ref[i][f])
+                        cate_x.append(self.encode_ref[str(i)][f])
             else:
                 x_copy = x.copy()
                 x_copy = np.array(x_copy).reshape(1,-1)
@@ -348,28 +350,36 @@ class clustered_comonotonic:
                 x_copy_cont = self.transformer.transform(x_copy_cont)
                 index_cont = 0
                 for i,f in enumerate(x):
+                    f = int(f)
                     if self.mixed_discrete == False:
                         if i in self.cont_col:
                             discretized_val = x_copy_cont[0][index_cont]
-                            cate_x.append(self.encode_ref[i][discretized_val])
+                            try:
+                                cate_x.append(self.encode_ref[str(i)][discretized_val])
+                            except: # if this feature value is not in train, append -1 
+                                cate_x.append(-1)
                             index_cont += 1
+                        # the feature is categorical. It is possible that no value in training set
                         else:
-                            cate_x.append(self.encode_ref[i][f])
+                            try:
+                                cate_x.append(self.encode_ref[str(i)][f])
+                            except: # if this feature value is not in train, append -1
+                                cate_x.append(-1)
                     else:
                         if (i in self.cont_col) and (i not in self.bin_info.keys()):
                             discretized_val = x_copy_cont[0][index_cont]
-                            cate_x.append(self.encode_ref[i][discretized_val])
+                            cate_x.append(self.encode_ref[str(i)][discretized_val])
                             index_cont += 1
                         elif (i in self.cont_col) and (i in self.bin_info.keys()):
                             discretized_val = np.digitize(f,self.bin_info[i])
-                            cate_x.append(self.encode_ref[i][discretized_val])
+                            cate_x.append(self.encode_ref[str(i)][discretized_val])
                             index_cont += 1
                         else:
-                            cate_x.append(self.encode_ref[i][f])
+                            cate_x.append(self.encode_ref[str(i)][f])
         else:
             cate_x = list()
             for i, f in enumerate(x):
-                cate_x.append(self.encode_ref[i][f])
+                cate_x.append(self.encode_ref[str(i)][f])
         end = timeit.default_timer()
         # get the probability distribution of one instance
         prob_distribution = self.prior_prob.copy() # initialize with prior probability
